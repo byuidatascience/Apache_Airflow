@@ -63,3 +63,4 @@ docker compose down
 
 <!-- https://airflow.apache.org/docs/apache-airflow/stable/tutorial/index.html -->
 <!-- https://www.youtube.com/watch?v=ouERCRRvkFQ -->
+<!-- https://www.youtube.com/watch?v=RXWYPZ3T9ys -->
