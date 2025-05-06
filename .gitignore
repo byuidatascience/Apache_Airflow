@@ -1,5 +1,5 @@
 .env
 /logs/
-/dags/
+/dags/__pycache__
 /config/
 airflow-core-fernet-key.py
