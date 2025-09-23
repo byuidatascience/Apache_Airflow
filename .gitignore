@@ -2,4 +2,8 @@
 /logs/
 /dags/__pycache__
 /config/
-airflow-core-fernet-key.py
+/dags/admin.py
+/dags/stocks_to_mongo.py
+/archive/
+dags/example_mongo_etl.py
+dags/stocks_to_mongo_dag_v3.py
