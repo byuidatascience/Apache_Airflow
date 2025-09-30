@@ -4,3 +4,4 @@ sshtunnel
 yfinance
 pandas
 pandas_market_calendars
+git+https://github.com/m0rp43us/openmeteopy
