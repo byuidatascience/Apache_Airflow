@@ -1,80 +1,70 @@
+# ----------------------------------------------------------------
+# tutorial.py
+# Airflow 3.0 TaskFlow API — Tutorial DAG
+# Demonstrates a dependency-free ETL flow:
+# Extract → Transform → Quality Check → Load
+# ----------------------------------------------------------------
 
-import textwrap
+from airflow.decorators import dag, task
 from datetime import datetime, timedelta
 
-# Operators; we need this to operate!
-from airflow.providers.standard.operators.bash import BashOperator
-
-# The DAG object; we'll need this to instantiate a DAG
-from airflow.sdk import DAG
-with DAG(
-    "tutorial",
-    # These args will get passed on to each operator
-    # You can override them on a per-task basis during operator initialization
-    default_args={
-        "depends_on_past": False,
-        "retries": 1,
-        "retry_delay": timedelta(minutes=5),
-        # 'queue': 'bash_queue',
-        # 'pool': 'backfill',
-        # 'priority_weight': 10,
-        # 'end_date': datetime(2016, 1, 1),
-        # 'wait_for_downstream': False,
-        # 'execution_timeout': timedelta(seconds=300),
-        # 'on_failure_callback': some_function, # or list of functions
-        # 'on_success_callback': some_other_function, # or list of functions
-        # 'on_retry_callback': another_function, # or list of functions
-        # 'sla_miss_callback': yet_another_function, # or list of functions
-        # 'on_skipped_callback': another_function, #or list of functions
-        # 'trigger_rule': 'all_success'
-    },
-    description="A simple tutorial DAG",
-    schedule=timedelta(days=1),
-    start_date=datetime(2021, 1, 1),
-    catchup=False,
-    tags=["example"],
-) as dag:
-
-    # t1, t2 and t3 are examples of tasks created by instantiating operators
-    t1 = BashOperator(
-        task_id="print_date",
-        bash_command="date",
-    )
-
-    t2 = BashOperator(
-        task_id="sleep",
-        depends_on_past=False,
-        bash_command="sleep 5",
-        retries=3,
-    )
-    t1.doc_md = textwrap.dedent(
-        """\
-    #### Task Documentation
-    You can document your task using the attributes `doc_md` (markdown),
-    `doc` (plain text), `doc_rst`, `doc_json`, `doc_yaml` which gets
-    rendered in the UI's Task Instance Details page.
-    ![img](https://imgs.xkcd.com/comics/fixing_problems.png)
-    **Image Credit:** Randall Munroe, [XKCD](https://xkcd.com/license.html)
+# ----------------------------------------------------------------
+# DAG Definition
+# ----------------------------------------------------------------
+@dag(
+    dag_id="tutorial_etl_dag",
+    description="Tutorial DAG showing a simple ETL flow (no external dependencies)",
+    start_date=datetime.utcnow() - timedelta(days=5),  # 5-day backfill
+    schedule="@daily",
+    catchup=True,
+    max_active_runs=1,
+    tags=["tutorial", "etl"],
+)
+def tutorial_etl_dag():
     """
-    )
-
-    dag.doc_md = __doc__  # providing that you have a docstring at the beginning of the DAG; OR
-    dag.doc_md = """
-    This is a documentation placed anywhere
-    """  # otherwise, type it like this
-    templated_command = textwrap.dedent(
-        """
-    {% for i in range(5) %}
-        echo "{{ ds }}"
-        echo "{{ macros.ds_add(ds, 7)}}"
-    {% endfor %}
+    Educational ETL DAG for students.
+    Runs daily and backfills 5 days.
+    Each task only logs text — no APIs, no databases, no external dependencies.
     """
-    )
 
-    t3 = BashOperator(
-        task_id="templated",
-        depends_on_past=False,
-        bash_command=templated_command,
-    )
+    @task(retries=1, retry_delay=timedelta(minutes=1))
+    def extract(execution_date=None):
+        print(f"\n--- EXTRACT ({execution_date.date()}) ---")
+        print("Pretend we fetch raw data here (API call, DB query, etc).")
+        records = [f"record_{i}_{execution_date.date()}" for i in range(1, 6)]
+        print(f"Extracted records: {records}")
+        return records
 
-    t1 >> [t2, t3]
+    @task(retries=1, retry_delay=timedelta(minutes=1))
+    def transform(records: list, execution_date=None):
+        print(f"\n--- TRANSFORM ({execution_date.date()}) ---")
+        print("Pretend we clean or enrich the raw data here.")
+        transformed = [r.upper() for r in records]
+        print(f"Transformed records: {transformed}")
+        return transformed
+
+    @task(retries=1, retry_delay=timedelta(minutes=1))
+    def quality_check(records: list, execution_date=None):
+        print(f"\n--- QUALITY CHECK ({execution_date.date()}) ---")
+        if not records:
+            raise ValueError("No records to load!")
+        print(f"Quality check passed: {len(records)} records ready for load.")
+        return records
+
+    @task(retries=1, retry_delay=timedelta(minutes=1))
+    def load(records: list, execution_date=None):
+        print(f"\n--- LOAD ({execution_date.date()}) ---")
+        print("Pretend we load the records into a warehouse or database.")
+        print(f"Loaded {len(records)} records successfully.")
+        return "Load complete."
+
+    # DAG flow: extract → transform → quality_check → load
+    raw = extract()
+    clean = transform(raw)
+    checked = quality_check(clean)
+    load(checked)
+
+# ----------------------------------------------------------------
+# DAG Exposure
+# ----------------------------------------------------------------
+tutorial_dag = tutorial_etl_dag()
