@@ -10,6 +10,9 @@ import sshtunnel
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 import base64
+import logging
+from sshtunnel import SSHTunnelForwarder
+from pymongo import MongoClient
 
 # -------------------------------------------------------------------
 # Utility Functions
@@ -217,3 +220,46 @@ def get_finnhub_api_key():
     if not api_key:
         raise ValueError("❌ FINHUB_API_KEY not found in environment")
     return api_key
+
+# ---------------------------------------------------------
+# SSH Tunnel to MongoDB
+# ---------------------------------------------------------
+def create_ssh_tunnel():
+    """Start an SSH tunnel and return the tunnel object."""
+    SSH_HOST = os.getenv("SSH_HOST")
+    SSH_PORT = int(os.getenv("SSH_PORT"))
+    SSH_USER = os.getenv("SSH_USER")
+    SSH_PASSWORD = os.getenv("SSH_PASSWORD")
+    MONGO_HOST = os.getenv("MONGO_HOST")
+    MONGO_PORT = int(os.getenv("MONGO_PORT"))
+
+    logging.info("Starting SSH tunnel to MongoDB...")
+    tunnel = SSHTunnelForwarder(
+        (SSH_HOST, SSH_PORT),
+        ssh_username=SSH_USER,
+        ssh_password=SSH_PASSWORD,
+        remote_bind_address=(MONGO_HOST, MONGO_PORT),
+        local_bind_address=("127.0.0.1", 27017)
+    )
+    tunnel.start()
+    logging.info(f"SSH tunnel established on local port {tunnel.local_bind_port}")
+    return tunnel
+
+
+# ---------------------------------------------------------
+# MongoDB Client
+# ---------------------------------------------------------
+def get_mongo_client(tunnel):
+    """Create a MongoDB client using an active SSH tunnel."""
+    MONGO_USER = os.getenv("MONGO_USER")
+    MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
+    MONGO_DB_NAME = os.getenv("MONGO_DB")
+
+    uri = (
+        f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}"
+        f"@127.0.0.1:{tunnel.local_bind_port}/"
+        f"?authSource={MONGO_DB_NAME}"
+    )
+    client = MongoClient(uri)
+    logging.info("MongoDB client connected successfully.")
+    return client
