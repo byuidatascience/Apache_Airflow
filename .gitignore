@@ -3,5 +3,6 @@
 /logs/
 /dags/__pycache__
 /dags/*
+!dags/utils.py
 /config/
 /archive/
