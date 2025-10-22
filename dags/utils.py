@@ -249,7 +249,7 @@ def create_ssh_tunnel():
 # ---------------------------------------------------------
 # MongoDB Client
 # ---------------------------------------------------------
-def get_mongo_client(tunnel):
+def get_mongo_client_cloud(tunnel):
     """Create a MongoDB client using an active SSH tunnel."""
     MONGO_USER = os.getenv("MONGO_USER")
     MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
