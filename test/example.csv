@@ -1,0 +1,4 @@
+symbol,date,headline,url
+AAPL,2025-07-16,"Apple announces earnings","https://example.com/news/apple"
+MSFT,2025-07-16,"Microsoft releases new product","https://example.com/news/microsoft"
+GOOG,2025-07-16,"Google invests in AI","https://example.com/news/google"

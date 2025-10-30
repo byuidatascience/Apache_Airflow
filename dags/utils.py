@@ -135,8 +135,8 @@ def get_snowflake_connection(schema: str = None):
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         role=os.getenv("SNOWFLAKE_ROLE"),
         warehouse=os.getenv("SNOWFLAKE_WAREHOUSE", "RAW_WH"),
-        database=os.getenv("SNOWFLAKE_DATABASE", "RAW"),
-        schema=schema or os.getenv("SNOWFLAKE_SCHEMA", "PUBLIC"),
+        database=os.getenv("SNOWFLAKE_DATABASE", "SNOWBEARAIR_DB"),
+        schema=schema or os.getenv("SNOWFLAKE_SCHEMA", "RAW"),
     )
 
     key_path = os.getenv("SNOWFLAKE_PRIVATE_KEY_PATH")
@@ -180,7 +180,7 @@ def get_ssh_tunnel():
         (os.getenv("SSH_HOST"), int(os.getenv("SSH_PORT", 22))),
         ssh_username=os.getenv("SSH_USER"),
         ssh_password=os.getenv("SSH_PASSWORD"),
-        remote_bind_address=(os.getenv("MONGODB_HOST"), int(os.getenv("MONGODB_PORT", 27017))),
+        remote_bind_address=(os.getenv("MONGO_HOST"), int(os.getenv("MONGO_PORT", 27017))),
     )
 
 # -------------------------------------------------------------------
@@ -263,3 +263,47 @@ def get_mongo_client_cloud(tunnel):
     client = MongoClient(uri)
     logging.info("MongoDB client connected successfully.")
     return client
+
+# ---------------------------------------------------------
+# Weather Record Builder
+# ---------------------------------------------------------
+
+def build_weather_record(weather_dict, target_date, city):
+    """Extract weather metrics safely from API response."""
+    daily_data = weather_dict.get("daily", {})
+    return {
+        "date": target_date,
+        "city": city,
+        "max_temp": daily_data.get("temperature_2m_max", [None])[0],
+        "min_temp": daily_data.get("temperature_2m_min", [None])[0],
+        "precip": daily_data.get("precipitation_sum", [None])[0],
+        "max_wind": daily_data.get("windspeed_10m_max", [None])[0],
+    }
+
+# ---------------------------------------------------------
+# Snowflake MERGE SQL Builder
+# ---------------------------------------------------------
+
+def build_merge_sql(rec, table):
+    """Return a parameterized Snowflake MERGE statement."""
+    return f"""
+        MERGE INTO {table} t
+        USING (SELECT
+            '{rec["date"]}' AS DATE,
+            '{rec["city"]}' AS CITY,
+            {rec["max_temp"] if rec["max_temp"] is not None else 'NULL'} AS MAX_TEMP,
+            {rec["min_temp"] if rec["min_temp"] is not None else 'NULL'} AS MIN_TEMP,
+            {rec["max_wind"] if rec["max_wind"] is not None else 'NULL'} AS MAX_WIND,
+            {rec["precip"] if rec["precip"] is not None else 'NULL'} AS PRECIP
+        ) s
+        ON t.DATE = s.DATE AND t.CITY = s.CITY
+        WHEN MATCHED THEN UPDATE SET
+            MAX_TEMP = s.MAX_TEMP,
+            MIN_TEMP = s.MIN_TEMP,
+            MAX_WIND = s.MAX_WIND,
+            PRECIP   = s.PRECIP
+        WHEN NOT MATCHED THEN INSERT
+            (DATE, CITY, MAX_TEMP, MIN_TEMP, MAX_WIND, PRECIP)
+        VALUES
+            (s.DATE, s.CITY, s.MAX_TEMP, s.MIN_TEMP, s.MAX_WIND, s.PRECIP);
+    """
