@@ -13,6 +13,8 @@ import base64
 import logging
 from sshtunnel import SSHTunnelForwarder
 from pymongo import MongoClient
+import stat
+import paramiko
 
 # -------------------------------------------------------------------
 # Utility Functions
@@ -307,3 +309,66 @@ def build_merge_sql(rec, table):
         VALUES
             (s.DATE, s.CITY, s.MAX_TEMP, s.MIN_TEMP, s.MAX_WIND, s.PRECIP);
     """
+
+# ---------------------------------------------------------------
+# SFTP Helper Utilities for Airflow DAGs
+# ---------------------------------------------------------------
+
+def create_sftp_connection():
+    """
+    Establish an SFTP connection using username/password from .env.
+    Returns a live paramiko SFTP client.
+    """
+    host = os.getenv("SFTP_HOST")
+    port = int(os.getenv("SFTP_PORT", 22))
+    username = os.getenv("SFTP_USER")
+    password = os.getenv("SFTP_PASSWORD")
+
+    try:
+        transport = paramiko.Transport((host, port))
+        transport.connect(username=username, password=password)
+        sftp = paramiko.SFTPClient.from_transport(transport)
+        logging.info(f"✅ Connected to SFTP: {host}")
+        return sftp
+    except Exception as e:
+        logging.error(f"❌ Failed to connect to SFTP: {e}")
+        raise
+
+def is_directory(sftp, path):
+    """Check if a given SFTP path is a directory."""
+    try:
+        return stat.S_ISDIR(sftp.stat(path).st_mode)
+    except IOError:
+        return False
+
+def list_folders(sftp):
+    """Return list of top-level folders on SFTP."""
+    try:
+        folders = [f for f in sftp.listdir() if is_directory(sftp, f)]
+        logging.info(f"📂 Found {len(folders)} folders on SFTP.")
+        return folders
+    except Exception as e:
+        logging.error(f"Error listing folders: {e}")
+        return []
+
+def list_files(sftp, folder):
+    """Return list of files within a given folder."""
+    try:
+        sftp.chdir(folder)
+        files = [f for f in sftp.listdir() if not is_directory(sftp, f)]
+        logging.info(f"🧾 Found {len(files)} files in {folder}")
+        return files
+    except Exception as e:
+        logging.error(f"Error listing files in {folder}: {e}")
+        return []
+
+def read_file_from_sftp(sftp, folder, filename):
+    """Read a file from SFTP and return its content as text."""
+    try:
+        remote_path = os.path.join(folder, filename)
+        with sftp.open(remote_path, "r") as f:
+            content = f.read().decode("utf-8")
+        return content
+    except Exception as e:
+        logging.error(f"Error reading {filename}: {e}")
+        raise

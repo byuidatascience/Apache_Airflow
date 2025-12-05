@@ -1,4 +1,4 @@
-FROM apache/airflow:3.0.0
+FROM apache/airflow:3.1.3
 
 # Switch to root only for apt installs
 USER root
@@ -11,5 +11,6 @@ USER airflow
 RUN pip install --no-cache-dir --upgrade pip
 
 # Copy requirements and install them
-COPY requirements.txt /requirements.txt
-RUN pip install --no-cache-dir -r /requirements.txt
+# COPY requirements.txt /requirements.txt
+ADD requirements.txt .
+RUN pip install apache-airflow==${AIRFLOW_VERSION} -r requirements.txt

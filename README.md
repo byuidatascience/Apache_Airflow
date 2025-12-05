@@ -48,3 +48,10 @@ docker compose down
 <!-- https://airflow.apache.org/docs/apache-airflow/stable/tutorial/fundamentals.html -->
 <!-- https://www.youtube.com/watch?v=ouERCRRvkFQ -->
 <!-- https://www.youtube.com/watch?v=RXWYPZ3T9ys -->
+
+## Note
+``` bash
+# Stop everything and remove containers + volumes for this project
+docker compose down --volumes --remove-orphans
+```
+This will stop all running containers, remove the containers, and delete any associated volumes for this project.

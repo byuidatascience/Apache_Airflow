@@ -14,6 +14,7 @@ SFTP_USER = os.getenv("SFTP_USER")
 SFTP_PASSWORD = os.getenv("SFTP_PASSWORD")
 SFTP_DIR = os.getenv("SFTP_DIR")
 LOCAL_FILE = "example.csv"
+REMOTE_FILE = "AAPL_2025-01-01.csv"
 
 # Logging
 logging.basicConfig(
@@ -22,7 +23,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def upload_file():
+def download_file():
     try:
         logger.info("Connecting to SFTP…")
         ssh = paramiko.SSHClient()
@@ -41,18 +42,23 @@ def upload_file():
             logger.error(f"❌ Remote directory does not exist: {SFTP_DIR}")
             return
 
-        # Prepare full remote path
-        remote_path = f"{SFTP_DIR}/{os.path.basename(LOCAL_FILE)}"
-        logger.info(f"⬆️ Uploading {LOCAL_FILE} → {remote_path}")
-        sftp.put(LOCAL_FILE, remote_path)
+        # Download one file from the 2025-01-01 folder to verify with AAPL_2025-01-01.csv
+        remote_path = f"{SFTP_DIR}/2025-01-01/{os.path.basename(REMOTE_FILE)}"
+        logger.info(f"⬇️ Downloading back to verify upload: {remote_path}")
+        # Ensure the local directory exists before downloading
+        local_dir = "2025-01-01"
+        os.makedirs(local_dir, exist_ok=True)
+        local_path = os.path.join(local_dir, os.path.basename(REMOTE_FILE))
+        sftp.get(remote_path, local_path)
+        logger.info("✅ Download completed for verification.")
 
-        # Verify
-        local_size = os.path.getsize(LOCAL_FILE)
+        # Verify downloaded file size
+        downloaded_size = os.path.getsize("2025-01-01/" +os.path.basename(REMOTE_FILE))
         remote_size = sftp.stat(remote_path).st_size
-        if local_size == remote_size:
-            logger.info(f"✅ Upload verified: {local_size} bytes.")
+        if downloaded_size == remote_size:
+            logger.info(f"✅ Download verified: {downloaded_size} bytes.")
         else:
-            logger.warning(f"⚠️ Size mismatch: local {local_size} vs remote {remote_size}")
+            logger.warning(f"⚠️ Size mismatch: downloaded {downloaded_size} vs remote {remote_size}")
 
         sftp.close()
         ssh.close()
@@ -65,7 +71,7 @@ def upload_file():
 # Retry logic
 for attempt in range(2):
     try:
-        upload_file()
+        download_file()
         break
     except Exception as e:
         if attempt == 0:
