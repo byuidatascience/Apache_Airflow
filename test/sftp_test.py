@@ -42,18 +42,19 @@ def download_file():
             logger.error(f"❌ Remote directory does not exist: {SFTP_DIR}")
             return
 
-        # Download one file from the 2025-01-01 folder to verify with AAPL_2025-01-01.csv
+        # Download one file from the 2025-01-01 folder to verify with AAPL_2026-01-01.csv
         remote_path = f"{SFTP_DIR}/2025-01-01/{os.path.basename(REMOTE_FILE)}"
         logger.info(f"⬇️ Downloading back to verify upload: {remote_path}")
         # Ensure the local directory exists before downloading
-        local_dir = "2025-01-01"
+        local_dir = "sftp_downloads"
         os.makedirs(local_dir, exist_ok=True)
         local_path = os.path.join(local_dir, os.path.basename(REMOTE_FILE))
         sftp.get(remote_path, local_path)
         logger.info("✅ Download completed for verification.")
 
         # Verify downloaded file size
-        downloaded_size = os.path.getsize("2025-01-01/" +os.path.basename(REMOTE_FILE))
+        # downloaded_size = os.path.getsize(local_path +os.path.basename(REMOTE_FILE))
+        downloaded_size = os.path.getsize(local_path)
         remote_size = sftp.stat(remote_path).st_size
         if downloaded_size == remote_size:
             logger.info(f"✅ Download verified: {downloaded_size} bytes.")

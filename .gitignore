@@ -9,3 +9,6 @@
 /archive/
 !dags/libs/openmeteopy/
 /staging/
+/test/sftp_downloads/*
+!test/sftp_downloads/
+GEMINI.md
