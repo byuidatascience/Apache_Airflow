@@ -1,9 +1,12 @@
 .env
+/dags/archive/
 /test/student.env
 /logs/
 /dags/__pycache__
 /dags/*
 !dags/utils.py
+!dags/tutorial.py
+!dags/starter_dag.py
 !dags/libs/
 /config/
 /archive/

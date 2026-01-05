@@ -1,6 +1,4 @@
 import pandas as pd
-import argparse
-from datetime import datetime, timedelta
 import re
 import snowflake.connector
 from dotenv import load_dotenv
@@ -48,77 +46,6 @@ def get_sp500_tickers() -> list[str]:
         .tolist()
     )
     return tickers
-
-# -------------------------------------------------------------------
-# Date Utilities
-# -------------------------------------------------------------------
-# Get target date from command line arguments
-def get_target_date():
-    """
-    Returns the target date string (YYYY-MM-DD) from command line args.
-    Defaults to yesterday if not provided or invalid.
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--date', help='Run for specific date (YYYY-MM-DD)')
-
-    # In Jupyter, ignore extra arguments (like `--f`)
-    args, unknown = parser.parse_known_args()
-
-    # Try to parse the date or default to yesterday
-    try:
-        if args.date:
-            # Validate format
-            datetime.strptime(args.date, "%Y-%m-%d")
-            return args.date
-    except Exception:
-        print(f"[WARN] Invalid --date format, defaulting to yesterday.")
-
-    # Default fallback
-    target = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    print(f"[INFO] No valid --date provided. Defaulting to: {target}")
-    return target
-
-# -------------------------------------------------------------------
-# Check if a date is a weekend
-# -------------------------------------------------------------------
-def is_weekend(date_str: str) -> bool:
-    """
-    Return True if the date is Saturday or Sunday.
-    """
-    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-    return date_obj.weekday() >= 5  # 5 = Saturday, 6 = Sunday
-
-from pathlib import Path
-
-# -------------------------------------------------------------------
-# Log Failed Fetches
-# -------------------------------------------------------------------
-def log_failed_fetch(symbol, date, reason):
-    """
-    Logs failed fetch attempts to a file for later review.
-    """
-    log_file = Path("logs/failed_fetches.txt")
-    log_file.parent.mkdir(exist_ok=True)  # Create 'logs' folder if needed
-
-    with log_file.open("a") as f:
-        f.write(f"{symbol},{date},{reason}\n")
-
-# -------------------------------------------------------------------
-# Snowflake_password
-# -------------------------------------------------------------------
-def get_snowflake_connection_pw(schema: str = None):
-    """
-    Returns a Snowflake connection.
-    - schema: override default schema if needed
-    """
-    return snowflake.connector.connect(
-        user=os.getenv("SNOWFLAKE_USER"),
-        password=os.getenv("SNOWFLAKE_PASSWORD"),
-        account=os.getenv("SNOWFLAKE_ACCOUNT"),
-        warehouse=os.getenv("SNOWFLAKE_WAREHOUSE", "RAW_WH"),
-        database=os.getenv("SNOWFLAKE_DATABASE", "RAW"),
-        schema=schema or os.getenv("SNOWFLAKE_SCHEMA", "PUBLIC"),
-    )
 
 # -------------------------------------------------------------------
 # Snowflake_keypair
@@ -169,23 +96,6 @@ def get_snowflake_connection(schema: str = None):
     return snowflake.connector.connect(private_key=private_key, **common)
 
 # -------------------------------------------------------------------
-# SSH Tunnel
-# -------------------------------------------------------------------
-def get_ssh_tunnel():
-    """
-    Returns an active SSH tunnel context for MongoDB connections.
-    Usage:
-        with get_ssh_tunnel() as tunnel:
-            client = get_mongo_client(tunnel.local_bind_port)
-    """
-    return sshtunnel.SSHTunnelForwarder(
-        (os.getenv("SSH_HOST"), int(os.getenv("SSH_PORT", 22))),
-        ssh_username=os.getenv("SSH_USER"),
-        ssh_password=os.getenv("SSH_PASSWORD"),
-        remote_bind_address=(os.getenv("MONGO_HOST"), int(os.getenv("MONGO_PORT", 27017))),
-    )
-
-# -------------------------------------------------------------------
 # MongoDB
 # -------------------------------------------------------------------
 def get_mongo_client(local_port=None):
@@ -211,17 +121,6 @@ def get_mongo_collection(client):
     collection_name = os.getenv("MONGO_COLLECTION")
     return client[db_name][collection_name]
 
-# -------------------------------------------------------------------
-# Finnhub API
-# -------------------------------------------------------------------
-def get_finnhub_api_key():
-    """
-    Returns the Finnhub API key from environment variables.
-    """
-    api_key = os.getenv("FINHUB_API_KEY")
-    if not api_key:
-        raise ValueError("❌ FINHUB_API_KEY not found in environment")
-    return api_key
 
 # ---------------------------------------------------------
 # SSH Tunnel to MongoDB
@@ -246,25 +145,6 @@ def create_ssh_tunnel():
     tunnel.start()
     logging.info(f"SSH tunnel established on local port {tunnel.local_bind_port}")
     return tunnel
-
-
-# ---------------------------------------------------------
-# MongoDB Client
-# ---------------------------------------------------------
-def get_mongo_client_cloud(tunnel):
-    """Create a MongoDB client using an active SSH tunnel."""
-    MONGO_USER = os.getenv("MONGO_USER")
-    MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
-    MONGO_DB_NAME = os.getenv("MONGO_DB")
-
-    uri = (
-        f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}"
-        f"@127.0.0.1:{tunnel.local_bind_port}/"
-        f"?authSource={MONGO_DB_NAME}"
-    )
-    client = MongoClient(uri)
-    logging.info("MongoDB client connected successfully.")
-    return client
 
 # ---------------------------------------------------------
 # Weather Record Builder
