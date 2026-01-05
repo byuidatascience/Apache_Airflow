@@ -17,14 +17,14 @@ from dags.utils import get_snowflake_connection
 # -------------------------------------------------------------------
 # Configuration
 # -------------------------------------------------------------------
-ON_OFF_SNOWFLAKE_LOAD_ENABLED = True  # Set to True to enable Snowflake loading
+ON_OFF_SNOWFLAKE_LOAD_ENABLED = False  # Set to True to enable Snowflake loading
 SNOWFLAKE_DATABASE = os.getenv("SNOWFLAKE_DATABASE", "SNOWBEARAIR_DB") # Default to SNOWBEARAIR_DB
 SNOWFLAKE_SCHEMA = os.getenv("SNOWFLAKE_SCHEMA", "RAW") # Default to RAW
 SNOWFLAKE_TABLE = "BORED_API_ACTIVITIES" # Table name for Bored API data
 
 @dag(
     dag_id="starter_dag",
-    start_date=datetime(2023, 1, 1, tzinfo=timezone.utc), # Ensure timezone-aware
+    start_date=datetime(2026, 1, 1, tzinfo=timezone.utc), # Ensure timezone-aware
     schedule="@daily",
     catchup=False,
     tags=["starter", "example", "elt", "snowflake"],
