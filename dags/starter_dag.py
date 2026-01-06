@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 import pandas as pd # Import pandas for DataFrame operations
+from snowflake.connector.pandas_tools import write_pandas
 
 from airflow.decorators import dag, task
 
@@ -47,7 +48,7 @@ def starter_dag_elt():
         """
         Fetches a random activity from the Bored API.
         """
-        response = requests.get("https://www.boredapi.com/api/activity")
+        response = requests.get("https://www.boredapi.com/api/activity", timeout=15)
         response.raise_for_status()  # Raise an exception for bad status codes
         return response.json()
 
@@ -137,7 +138,7 @@ def starter_dag_elt():
             #
             # Adjust data types as needed based on your specific requirements.
 
-            success, nchunks, nrows, _ = conn.write_pandas(
+            success, nchunks, nrows, _ = write_pandas(
                 df,
                 table_name=SNOWFLAKE_TABLE,
                 database=SNOWFLAKE_DATABASE,
