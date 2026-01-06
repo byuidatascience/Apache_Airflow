@@ -8,10 +8,14 @@
 !dags/tutorial.py
 !dags/starter_dag.py
 !dags/libs/
+!dags/sftp_template_dag.py
+!dags/api_template_dag.py
+!dags/mongo_template_dag.py
 /config/
 /archive/
 !dags/libs/openmeteopy/
 /staging/
 /test/sftp_downloads/*
 !test/sftp_downloads/
+student_dags/*
 GEMINI.md
