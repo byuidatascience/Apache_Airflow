@@ -39,9 +39,6 @@ STAGING_AREA = Path("staging/mongo")
 PROCESSED_LOG_FILE = STAGING_AREA / "processed_dates.txt"
 SNOWFLAKE_TABLE = "YOUR_MONGO_TARGET_TABLE_HERE"  # TODO: Replace with your Snowflake table name
 
-# Ensure staging directory and log file exist before the DAG runs
-STAGING_AREA.mkdir(parents=True, exist_ok=True)
-PROCESSED_LOG_FILE.touch(exist_ok=True)
 
 
 @dag(
@@ -208,7 +205,7 @@ def mongo_template_pipeline():
             log.warning(f"Staging directory not found for cleanup: {local_dir}")
 
     # --- Task Chaining ---
-    extracted_data, run_date = extract_from_mongo(data_interval_start="{{ ds }}")
+    extracted_data, run_date = extract_from_mongo()
     transformed_data, run_date_transform = transform_data([extracted_data, run_date])
     loaded_date = load_to_snowflake([transformed_data, run_date_transform])
     cleanup_staging_area(loaded_date)

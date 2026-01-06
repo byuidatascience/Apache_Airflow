@@ -9,6 +9,9 @@ This is a ready-to-run Apache Airflow + Docker environment designed for classroo
 
 3. Run the airflow-core-fernet-key.py script to generate a fernet key. This key is used to encrypt sensitive data in Airflow, such as passwords and connection strings. You can run this script in your terminal or command prompt.
 
+### OpenMeteo Library Note (API Template)
+`requirements.txt` installs `openmeteopy` via a Git URL for the API template. If the build fails or the package is unavailable, comment out the `git+https://...openmeteopy` line and rebuild the containers. The API template will automatically fall back to the vendored copy in `dags/libs/openmeteopy`.
+
 you might need to install the `cryptography` library if you don't have it already. You can do this by running:
 ```bash
 pip install cryptography

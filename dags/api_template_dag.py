@@ -8,7 +8,9 @@ transforming it, and loading it into Snowflake, following ETL best practices.
 1.  **Fill in the `TODO` sections** in each task to complete the pipeline.
 2.  **API Connection:** The `extract_from_api` task connects to the Open-Meteo API.
     Review the `openmeteopy` library and the `build_weather_record` function in
-    `utils.py` to understand how it works.
+    `utils.py` to understand how it works. If the pip install fails, comment out
+    the `openmeteopy` line in `requirements.txt` and rebuild; this DAG will use
+    the vendored copy in `dags/libs/openmeteopy`.
 3.  **Staging:** Data is saved to a CSV in the `staging/api/{date}` folder.
 4.  **Idempotency:** The DAG checks a log file (`staging/api/processed_dates.txt`) 
     to avoid re-processing dates.
@@ -28,10 +30,16 @@ from airflow.decorators import dag, task
 # Import necessary utilities
 from utils import get_snowflake_connection, build_weather_record
 
-# Import weather data libraries
-from openmeteopy import OpenMeteo
-from openmeteopy.daily import DailyHistorical
-from openmeteopy.options import HistoricalOptions
+# Import weather data libraries.
+# Prefer the pip-installed package when available; fall back to the vendored copy in dags/libs.
+try:
+    from openmeteopy import OpenMeteo
+    from openmeteopy.daily import DailyHistorical
+    from openmeteopy.options import HistoricalOptions
+except ImportError:  # Use the vendored library if pip install fails in the container.
+    from libs.openmeteopy.client import OpenMeteo
+    from libs.openmeteopy.daily.historical import DailyHistorical
+    from libs.openmeteopy.options.historical import HistoricalOptions
 
 
 # -- Set up logging
@@ -49,9 +57,6 @@ CITIES = {
     "Tokyo": {"latitude": 35.6895, "longitude": 139.6917},
 }
 
-# Ensure staging directory and log file exist
-STAGING_AREA.mkdir(parents=True, exist_ok=True)
-PROCESSED_LOG_FILE.touch(exist_ok=True)
 
 
 @dag(
@@ -114,7 +119,7 @@ def api_template_pipeline():
                 # TODO: Add more daily variables here!
                 # Refer to the `openmeteopy.daily.DailyHistorical` class for available options.
                 # Example: .weather_code().sunrise().sunset()
-                daily = DailyHistorical().temperature_2m_max().temperature_2m_min().precipitation_sum().wind_speed_10m_max()
+                daily = DailyHistorical().temperature_2m_max().temperature_2m_min().precipitation_sum().windspeed_10m_max()
 
                 mgr = OpenMeteo(options, daily=daily.all())
                 response = mgr.get_dict()
@@ -215,7 +220,7 @@ def api_template_pipeline():
 
 
     # --- Task Chaining ---
-    extract_output, run_date = extract_from_api(data_interval_start="{{ ds }}")
+    extract_output, run_date = extract_from_api()
     transform_output, run_date_transform = transform_data([extract_output, run_date])
     loaded_date = load_to_snowflake([transform_output, run_date_transform])
     cleanup_staging_area(loaded_date)

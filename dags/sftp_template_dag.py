@@ -36,9 +36,6 @@ STAGING_AREA = Path("staging/sftp")
 PROCESSED_LOG_FILE = STAGING_AREA / "processed_dates.txt"
 SNOWFLAKE_TABLE = "YOUR_TABLE_NAME_HERE"  # TODO: Replace with your target table name
 
-# Ensure staging and log file exist
-STAGING_AREA.mkdir(parents=True, exist_ok=True)
-PROCESSED_LOG_FILE.touch(exist_ok=True)
 
 
 @dag(
@@ -202,7 +199,7 @@ def sftp_template_pipeline():
 
 
     # --- Task Chaining ---
-    extracted_data, run_date = extract_from_sftp(data_interval_start="{{ ds }}")
+    extracted_data, run_date = extract_from_sftp()
     transformed_data, run_date_transform = transform_data([extracted_data, run_date])
     loaded_date = load_to_snowflake([transformed_data, run_date_transform])
     cleanup_staging_files(loaded_date)
