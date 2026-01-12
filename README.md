@@ -9,10 +9,7 @@ This is a ready-to-run Apache Airflow + Docker environment designed for classroo
 
 3. Run the airflow-core-fernet-key.py script to generate a fernet key. This key is used to encrypt sensitive data in Airflow, such as passwords and connection strings. You can run this script in your terminal or command prompt.
 
-### OpenMeteo Library Note (API Template)
-`requirements.txt` installs `openmeteopy` via a Git URL for the API template. If the build fails or the package is unavailable, comment out the `git+https://...openmeteopy` line and rebuild the containers. The API template will automatically fall back to the vendored copy in `dags/libs/openmeteopy`.
-
-you might need to install the `cryptography` library if you don't have it already. You can do this by running:
+you need to install the `cryptography` library if you don't have it already. You can do this by running:
 ```bash
 pip install cryptography
 ```
@@ -21,14 +18,31 @@ Then, run the script:
 ```bash
 python airflow-core-fernet-key.py
 ```
+
 4. Copy the generated fernet key and paste it into the `editme.env` file in the `FERNET_KEY` variable. Then rename the file to just `.env` (remove the `editme` part).
 
 5. Make sure you have Docker and Docker Compose installed on your machine. You can download them from the official Docker website. Here is the link: https://docs.docker.com/get-docker/
 
+6. Generate SSH Keys for Snowflake Connection. Run the following commands in a bash shell (windows or mac). Update the `docker-compose.yaml` file `line 85` with the path to your private key. You only have to update your user name in the path that already exists there. (Windows users do not run in powershell, use bash only) Provide the public key to your Snowflake admin (your teacher) to set up the key pair authentication.
+
+```bash
+# Generate private key
+ssh-keygen -t rsa -b 4096 -m PEM -f "$env:USERPROFILE\.ssh\dbt_key" -N ""
+
+# Export public key in correct format (PKCS#8)
+openssl rsa -in "$env:USERPROFILE\.ssh\dbt_key" -pubout -out "$env:USERPROFILE\.ssh\dbt_key.pub"
+
+# Copy to clipboard
+Get-Content "$env:USERPROFILE\.ssh\dbt_key.pub" | Set-Clipboard
+Write-Host "✅ Public key copied to clipboard (PKCS#8 format, ready for Snowflake)."
+```
 
 ## ✅ Getting Airflow Started
 
 1. In that VS Code Terminal Run:
+
+### OpenMeteo Library Note (API Template)
+`requirements.txt` installs `openmeteopy` via a Git URL for the API template. If the build fails or the package is unavailable, comment out the `git+https://...openmeteopy` line and rebuild the containers. The API template will automatically fall back to the vendored copy in `dags/libs/openmeteopy`.
 
 ```bash
 docker compose up --build -d
