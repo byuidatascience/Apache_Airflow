@@ -23,18 +23,22 @@ python airflow-core-fernet-key.py
 
 5. Make sure you have Docker and Docker Compose installed on your machine. You can download them from the official Docker website. Here is the link: https://docs.docker.com/get-docker/
 
-6. Generate SSH Keys for Snowflake Connection. Run the following commands in a bash shell (windows or mac). Update the `docker-compose.yaml` file `line 85` with the path to your private key. You only have to update your user name in the path that already exists there. (Windows users do not run in powershell, use bash only) Provide the public key to your Snowflake admin (your teacher) to set up the key pair authentication.
+6. Generate SSH Keys for Snowflake Connection (windows). Run the following commands in a git-bash shell. Update the `docker-compose.yaml` file `line 85` with the path to your private key. You only have to update your user name in the path that already exists there. (Windows users do not run in powershell, use git-bash only) Provide the public key to your Snowflake admin (your teacher) to set up the key pair authentication.
 
 ```bash
-# Generate private key
-ssh-keygen -t rsa -b 4096 -m PEM -f "$env:USERPROFILE\.ssh\dbt_key" -N ""
+mkdir -p ~/.ssh
+ssh-keygen -t rsa -b 4096 -m PEM -f ~/.ssh/dbt_key -N ""
+openssl rsa -in ~/.ssh/dbt_key -pubout -out ~/.ssh/dbt_key.pub
+cat ~/.ssh/dbt_key.pub | clip
+```
 
-# Export public key in correct format (PKCS#8)
-openssl rsa -in "$env:USERPROFILE\.ssh\dbt_key" -pubout -out "$env:USERPROFILE\.ssh\dbt_key.pub"
+6. Generate SSH Keys for Snowflake Connection (mac). Run the following commands in a terminal. Update the `docker-compose.yaml` file `line 85` with the path to your private key. You only have to update your user name in the path that already exists there. Provide the public key to your Snowflake admin (your teacher) to set up the key pair authentication.
 
-# Copy to clipboard
-Get-Content "$env:USERPROFILE\.ssh\dbt_key.pub" | Set-Clipboard
-Write-Host "✅ Public key copied to clipboard (PKCS#8 format, ready for Snowflake)."
+```bash
+openssl genrsa -out ~/.ssh/dbt_key 2048
+openssl rsa -in ~/.ssh/dbt_key -pubout -out ~/.ssh/dbt_key.pub
+openssl rsa -in ~/.ssh/dbt_key -pubout -outform PEM -out ~/.ssh/dbt_key.pub
+cat ~/.ssh/dbt_key.pub | pbcopy
 ```
 
 ## ✅ Getting Airflow Started
@@ -44,6 +48,7 @@ Write-Host "✅ Public key copied to clipboard (PKCS#8 format, ready for Snowfla
 ### OpenMeteo Library Note (API Template)
 `requirements.txt` installs `openmeteopy` via a Git URL for the API template. If the build fails or the package is unavailable, comment out the `git+https://...openmeteopy` line and rebuild the containers. The API template will automatically fall back to the vendored copy in `dags/libs/openmeteopy`.
 
+Note: you only run the --build flag the first time or if you change something in the Dockerfile or requirements.txt After that you can just run `docker compose up -d`
 ```bash
 docker compose up --build -d
 ```
@@ -54,9 +59,7 @@ Login with:
 - **Username:** `airflow`
 - **Password:** `airflow`
 
-
 ## shut down
-
 ```bash
 docker compose down
 ```
@@ -67,8 +70,9 @@ docker compose down
 <!-- https://www.youtube.com/watch?v=RXWYPZ3T9ys -->
 
 ## Note
+### Stop everything and remove containers + volumes for this project
 ``` bash
-# Stop everything and remove containers + volumes for this project
 docker compose down --volumes --remove-orphans
 ```
+
 This will stop all running containers, remove the containers, and delete any associated volumes for this project.
