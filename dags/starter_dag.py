@@ -125,7 +125,7 @@ def starter_dag_elt():
             # This is a basic example; for production, use DDL in version control.
             # Example DDL for your Snowflake table (run this manually in Snowflake once):
             #
-            # CREATE TABLE IF NOT EXISTS SNOWBEARAIR_DB.RAW.BORED_API_ACTIVITIES (
+            # CREATE TABLE IF NOT EXISTS SNOWBEARAIR_DB.RAW.STARTER_DAG_LASTNAME_FI (
             #     ACTIVITY_IDEA VARCHAR,
             #     CATEGORY VARCHAR,
             #     PARTICIPANTS_NEEDED NUMBER(38,0),
