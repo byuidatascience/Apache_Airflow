@@ -18,7 +18,7 @@ from utils import get_snowflake_connection
 # -------------------------------------------------------------------
 # Configuration
 # -------------------------------------------------------------------
-ON_OFF_SNOWFLAKE_LOAD_ENABLED = False  # Set to True to enable Snowflake loading
+ON_OFF_SNOWFLAKE_LOAD_ENABLED = True  # Set to True to enable Snowflake loading
 SNOWFLAKE_DATABASE = os.getenv("SNOWFLAKE_DATABASE", "SNOWBEARAIR_DB") # Default to SNOWBEARAIR_DB
 SNOWFLAKE_SCHEMA = os.getenv("SNOWFLAKE_SCHEMA", "RAW") # Default to RAW
 SNOWFLAKE_TABLE = "BORED_API_ACTIVITIES" # Table name for Bored API data
@@ -139,7 +139,8 @@ def starter_dag_elt():
             # Adjust data types as needed based on your specific requirements.
 
             success, nchunks, nrows, _ = write_pandas(
-                df,
+                conn=conn,
+                df=df,
                 table_name=SNOWFLAKE_TABLE,
                 database=SNOWFLAKE_DATABASE,
                 schema=SNOWFLAKE_SCHEMA,
