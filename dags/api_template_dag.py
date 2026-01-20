@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 
 # Import necessary utilities
 from utils import get_snowflake_connection, build_weather_record
@@ -220,9 +220,9 @@ def api_template_pipeline():
 
 
     # --- Task Chaining ---
-    extract_output, run_date = extract_from_api()
-    transform_output, run_date_transform = transform_data([extract_output, run_date])
-    loaded_date = load_to_snowflake([transform_output, run_date_transform])
+    extract_result = extract_from_api()
+    transform_result = transform_data(extract_result)
+    loaded_date = load_to_snowflake(transform_result)
     cleanup_staging_area(loaded_date)
 
 # Instantiate the DAG

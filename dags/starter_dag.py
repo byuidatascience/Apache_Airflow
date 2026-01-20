@@ -9,11 +9,11 @@ import requests
 import pandas as pd # Import pandas for DataFrame operations
 from snowflake.connector.pandas_tools import write_pandas
 
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 
 # Import utility functions from utils.py (need to ensure it's on the path if not already)
 # This project's setup seems to handle dags/utils.py imports automatically for DAGs.
-from dags.utils import get_snowflake_connection
+from utils import get_snowflake_connection
 
 # -------------------------------------------------------------------
 # Configuration
@@ -46,9 +46,9 @@ def starter_dag_elt():
     @task
     def extract_activity():
         """
-        Fetches a random activity from the Bored API.
+        Fetches a random activity from the Bored API (community replacement).
         """
-        response = requests.get("https://www.boredapi.com/api/activity", timeout=15)
+        response = requests.get("https://bored-api.appbrewery.com/random", timeout=15)
         response.raise_for_status()  # Raise an exception for bad status codes
         return response.json()
 
