@@ -81,6 +81,20 @@ def starter_dag_elt():
         with open(file_path, "r") as f:
             data = json.load(f)
 
+        # Map accessibility string values to numeric (API changed from numeric to string)
+        accessibility_mapping = {
+            "Few to no challenges": 0.0,
+            "Minor challenges": 0.25,
+            "Some challenges": 0.5,
+            "Major challenges": 0.75,
+            "Significant challenges": 1.0,
+        }
+        raw_accessibility = data.get("accessibility")
+        if isinstance(raw_accessibility, str):
+            accessibility_value = accessibility_mapping.get(raw_accessibility, 0.5)
+        else:
+            accessibility_value = raw_accessibility
+
         # Simple transformation: select specific fields and create a DataFrame
         transformed_record = {
             "ACTIVITY_IDEA": data.get("activity"),
@@ -88,7 +102,7 @@ def starter_dag_elt():
             "PARTICIPANTS_NEEDED": data.get("participants"),
             "PRICE": data.get("price"),
             "LINK": data.get("link"),
-            "ACCESSIBILITY": data.get("accessibility"),
+            "ACCESSIBILITY": accessibility_value,
             "UNIQUE_KEY": data.get("key"), # Bored API provides a unique key per activity
             "FETCH_DATE": datetime.now().isoformat() # Add a fetch timestamp
         }

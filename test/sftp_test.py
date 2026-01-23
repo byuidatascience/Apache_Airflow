@@ -5,8 +5,11 @@ import logging
 from dotenv import load_dotenv
 import paramiko
 
+## you may need to install these packages in your environment:
+# pip install paramiko==3.5.1 python-dotenv sshtunnel==0.4.0
+
 # Load env
-load_dotenv("student.env")
+load_dotenv("../.env")
 
 SFTP_HOST = os.getenv("SFTP_HOST")
 SFTP_PORT = int(os.getenv("SFTP_PORT"))

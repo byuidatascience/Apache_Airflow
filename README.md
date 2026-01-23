@@ -11,8 +11,9 @@ This is a ready-to-run Apache Airflow + Docker environment designed for classroo
 
 you need to install the `cryptography` library if you don't have it already. You can do this by running:
 ```bash
-pip install cryptography
+pip install cryptography paramiko==3.5.1 python-dotenv sshtunnel==0.4.0
 ```
+Note: this includes all the other libraries needed for the scripts in the Test folder to run.
 
 Then, run the script:
 ```bash
@@ -23,21 +24,21 @@ python airflow-core-fernet-key.py
 
 5. Make sure you have Docker and Docker Compose installed on your machine. You can download them from the official Docker website. Here is the link: https://docs.docker.com/get-docker/
 
-6. Generate SSH Keys for Snowflake Connection (windows). Run the following commands in a git-bash shell. Update the `docker-compose.yaml` file `line 85` with the path to your private key. You only have to update your user name in the path that already exists there. (Windows users do not run in powershell, use git-bash only) Provide the public key to your Snowflake admin (your teacher) to set up the key pair authentication.
+6. Generate SSH Keys for Snowflake Connection (windows). Run the following commands in a git-bash shell. Update the `docker-compose.yaml` file `line 85` with the path to your private key. You only have to update your user name in the path that already exists there. (Windows users do not run in powershell, use git-bash only) Provide the public key to your Snowflake admin (your teacher) to set up the key pair authentication. [Snowflake Documentation on Key Pair Auth](https://docs.snowflake.com/en/user-guide/key-pair-auth)
 
 ```bash
 mkdir -p ~/.ssh
-ssh-keygen -t rsa -b 4096 -m PEM -f ~/.ssh/dbt_key -N ""
-openssl rsa -in ~/.ssh/dbt_key -pubout -out ~/.ssh/dbt_key.pub
-cat ~/.ssh/dbt_key.pub | clip
+openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out ~/.ssh/dbt_key.p8 -nocrypt
+openssl rsa -in ~/.ssh/dbt_key.p8 -pubout -out ~/.ssh/dbt_key.pub
+cat ~/.ssh/dbt_key.pub
 ```
 
 6. Generate SSH Keys for Snowflake Connection (mac). Run the following commands in a terminal. Update the `docker-compose.yaml` file `line 85` with the path to your private key. You only have to update your user name in the path that already exists there. Provide the public key to your Snowflake admin (your teacher) to set up the key pair authentication.
 
 ```bash
-openssl genrsa -out ~/.ssh/dbt_key 2048
-openssl rsa -in ~/.ssh/dbt_key -pubout -out ~/.ssh/dbt_key.pub
-openssl rsa -in ~/.ssh/dbt_key -pubout -outform PEM -out ~/.ssh/dbt_key.pub
+mkdir -p ~/.ssh
+openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out ~/.ssh/dbt_key.p8 -nocrypt
+openssl rsa -in ~/.ssh/dbt_key.p8 -pubout -out ~/.ssh/dbt_key.pub
 cat ~/.ssh/dbt_key.pub | pbcopy
 ```
 
