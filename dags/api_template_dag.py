@@ -124,7 +124,8 @@ def api_template_pipeline():
                 mgr = OpenMeteo(options, daily=daily.all())
                 response = mgr.get_dict()
                 
-                # The `build_weather_record` function from utils.py helps safely parse the API response.
+                # The `build_weather_record` function from utils.py helps safely parse the API response. 
+                # If you added columns above to the daily object, update this `build_weather_record` function accordingly inside utils.py.
                 record = build_weather_record(response, date_str, city)
                 all_cities_data.append(record)
 
@@ -184,7 +185,7 @@ def api_template_pipeline():
             # A MERGE statement is recommended for idempotency.
             # Example:
             # from snowflake.connector.pandas_tools import write_pandas
-            # success, _, _, _ = write_pandas(conn, df, SNOWFLAKE_TABLE, auto_create_table=True, overwrite=True)
+            # success, _, _, _ = write_pandas(conn, df, SNOWFLAKE_TABLE, auto_create_table=True, overwrite=False)
             # if not success:
             #     raise Exception("Failed to write to Snowflake.")
             
