@@ -15,6 +15,12 @@ for idempotency.
 4.  **Idempotency:** A log file at `staging/mongo/processed_dates.txt` is checked
     to prevent re-processing already loaded dates.
 5.  **Cleanup:** A final task removes the temporary staging folder after a successful run.
+6.  **Trading-day guard:** This is the stock pipeline. If a *trading day* (per the NYSE
+    calendar) has **no data** in MongoDB, the run **fails on purpose** so the gap is
+    visible and Airflow retries / lets you re-run it — instead of silently "succeeding"
+    with zero rows (which is how gaps get hidden). Weekends and market holidays with no
+    data pass normally, since no data is expected. If you adapt this template to
+    non-market data, remove or change that guard in `extract_from_mongo`.
 """
 
 from __future__ import annotations
@@ -25,7 +31,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
+import pandas_market_calendars as mcal
 from airflow.sdk import dag, task
+from airflow.exceptions import AirflowException
 
 # Import necessary utilities
 from utils import create_ssh_tunnel, get_mongo_client, get_snowflake_connection
@@ -113,7 +121,20 @@ def mongo_template_pipeline():
             # --- Fetch Data and Stage ---
             records = list(collection.find(query, projection))
             if not records:
-                log.warning(f"No records found for {date_str}. Skipping.")
+                # No data for this date. If it's a TRADING DAY, the upstream source is
+                # missing data -> fail loudly so the run is visible and retries, instead of
+                # silently "succeeding" with zero rows (which hides the gap). If it's a
+                # weekend or market holiday, no data is expected -> skip successfully.
+                is_trading_day = not mcal.get_calendar("NYSE").schedule(
+                    start_date=date_str, end_date=date_str
+                ).empty
+                if is_trading_day:
+                    raise AirflowException(
+                        f"No MongoDB records for trading day {date_str}. Upstream data is "
+                        "missing for this date -- failing so the gap is visible and can be "
+                        "retried / re-run once the source is backfilled."
+                    )
+                log.info(f"{date_str} is not a trading day (weekend/holiday); no data expected. Skipping.")
                 return None, date_str
 
             df = pd.DataFrame(records)
